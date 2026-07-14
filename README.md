@@ -157,16 +157,26 @@ docker run --rm --platform linux/amd64 -p 3000:3000 mendlens-mcp:local
 
 ## PlayMCP in KC Git 소스 빌드
 
-- MCP 서버 이름: `MendLens`
+- MCP 서버 이름: `mendlens`
 - 설명: `공식 제조사 근거에 일치하는 가전 오류 진단과 안전 행동을 제공하는 MendLens MCP 서버`
 - 브랜치/ref: `ps/feat/mendlens-mcp-server`
 - Dockerfile 경로: `Dockerfile`
+- 컨테이너 포트: `3000`
 - PAT: public 저장소이므로 입력하지 않음
 
-서버 상태가 `Active`가 되면 상세 화면의 Endpoint URL을 복사하고 다음 명령으로 배포 상태를 확인한다.
+2026년 7월 14일 배포 상태는 `Active`이며, 발급된 Endpoint는 다음과 같다.
+
+```text
+https://mendlens.playmcp-endpoint.kakaocloud.io/mcp
+```
+
+공개 Endpoint의 헬스체크, MCP 초기화, 도구 목록과 대표 호출 smoke test가 통과했다. 동일 Endpoint에서 `diagnose_error_code`를 10회 예열 후 100회 순차 호출한 측정값은 평균 `41.49ms`, p99 `52.48ms`였다.
+
+다음 명령으로 현재 배포 상태를 다시 확인할 수 있다.
 
 ```bash
-npm run smoke -- https://발급된-endpoint.example
+npm run smoke -- https://mendlens.playmcp-endpoint.kakaocloud.io/mcp
+npm run benchmark -- https://mendlens.playmcp-endpoint.kakaocloud.io/mcp 100
 ```
 
 공식 근거와 제출 절차의 확인 기록은 [PlayMCP · AGENTIC PLAYER 10 조사 문서](docs/research/playmcp-agentic-player-10.md)에 유지한다.

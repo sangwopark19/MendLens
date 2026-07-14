@@ -2,6 +2,8 @@
 
 > **See what's wrong. Know what to do.**
 
+![MendLens 대표 이미지](assets/mendlens-mcp-representative.png)
+
 **MendLens(찍고쳐)**는 가전제품 사진이나 오류 코드를 바탕으로 공식 설명서와 리콜 정보를 확인하고, 사용자가 지금 취해야 할 행동을 안내하는 생활 수리 AI 에이전트다.
 
 ## 한 줄 소개
@@ -107,3 +109,64 @@ MVP는 다음 조건을 충족할 때 성공으로 본다.
 ## 대회 일정 메모
 
 공식 페이지에 게시된 일정 기준으로 예선 접수 마감은 **2026년 7월 14일**이며, PlayMCP 서버 심사는 영업일 기준 최대 7일이 소요될 수 있다. 참가에는 카카오클라우드 MCP 서버 생성, PlayMCP 등록 및 심사, 전체 공개 전환, 예선 접수가 요구된다. 일정과 제출 상태는 반드시 [공식 페이지](https://b.kakao.com/views/PlayMCP/AGENTIC_PlAYER_10)에서 다시 확인한다.
+
+## 현재 MCP 구현
+
+현재 버전은 Endpoint와 PlayMCP 흐름을 검증하기 위한 제한된 MVP다. 실시간 제조사 검색이나 리콜 조회를 지원한다고 주장하지 않으며, 2026년 7월 14일에 공식 근거를 확인한 다음 사례만 진단한다.
+
+| 제조사 | 제품 | 모델 | 코드 | 최종 행동 |
+| --- | --- | --- | --- | --- |
+| LG전자 | 통돌이 세탁기 | T1204T | UE | 직접 해결 가능 |
+| LG전자 | 드럼세탁기 | F8Q6CNVKQ | UE | 직접 해결 가능 |
+| LG전자 | 스탠드형 에어컨 | FQ19V9KWAN | CH05 | 공식 AS 필요 |
+
+제공 도구는 다음 세 개다.
+
+- `prepare_diagnosis`: 진단에 필요한 제조사·제품군·모델·오류 코드의 누락 여부 확인
+- `diagnose_error_code`: 정확히 일치하는 공식 근거가 있을 때만 오류 진단 반환
+- `assess_immediate_risk`: 명시적인 위험 신호를 자가 조치보다 먼저 분류
+
+## 로컬 실행
+
+요구사항은 Node.js 22 이상이다.
+
+```bash
+npm install
+npm test
+npm run build
+npm start
+```
+
+기본 주소는 `http://127.0.0.1:3000`이며 MCP 경로는 `/mcp`, 상태 확인 경로는 `/health`다.
+
+```bash
+npm run smoke -- http://127.0.0.1:3000
+npm run benchmark -- http://127.0.0.1:3000 100
+```
+
+## Docker 검증
+
+```bash
+docker build --platform linux/amd64 -t mendlens-mcp:local .
+docker run --rm --platform linux/amd64 -p 3000:3000 mendlens-mcp:local
+```
+
+컨테이너는 `PORT` 환경 변수를 사용하고 non-root `node` 사용자로 실행된다.
+
+2026년 7월 14일 로컬 Docker Desktop에서 `linux/amd64` 컨테이너의 `diagnose_error_code`를 10회 예열 후 100회 순차 호출한 측정값은 평균 `2.77ms`, p99 `7.56ms`였다. 이 값은 로컬 환경 측정치이며 PlayMCP in KC의 production 성능을 보장하지 않는다.
+
+## PlayMCP in KC Git 소스 빌드
+
+- MCP 서버 이름: `MendLens`
+- 설명: `공식 제조사 근거에 일치하는 가전 오류 진단과 안전 행동을 제공하는 MendLens MCP 서버`
+- 브랜치/ref: `ps/feat/mendlens-mcp-server`
+- Dockerfile 경로: `Dockerfile`
+- PAT: public 저장소이므로 입력하지 않음
+
+서버 상태가 `Active`가 되면 상세 화면의 Endpoint URL을 복사하고 다음 명령으로 배포 상태를 확인한다.
+
+```bash
+npm run smoke -- https://발급된-endpoint.example
+```
+
+공식 근거와 제출 절차의 확인 기록은 [PlayMCP · AGENTIC PLAYER 10 조사 문서](docs/research/playmcp-agentic-player-10.md)에 유지한다.
